@@ -3,9 +3,9 @@
 There is an official julia api (see src/jlapi.c) provided in the Github julia project. This personal project is mainly devoted to
 developping some extensions  of the official jlapi.c without interferring with the official one. Indeed, since julia is a very active project, there are many directions in the development of APIs.
 
-## requirement
+## Requirement
 
-
+cloning [julia](https://github.com/JuliaLang/julia). 
 
 ## How to use it?
 
