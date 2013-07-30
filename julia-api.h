@@ -19,7 +19,7 @@ DLLEXPORT void jl_exception_clear(void);
 
 /************* Tools ********************/
 
-DLLEXPORT void jlapi_init(char *julia_home_dir);
+DLLEXPORT void jlapi_init(char *julia_home_dir, char* mode);
 DLLEXPORT const char *jlapi_get_stdout();
 DLLEXPORT const char *jlapi_get_stderr();
 
@@ -27,6 +27,5 @@ DLLEXPORT const char *jlapi_get_stderr();
 DLLEXPORT void jlapi_print_stdout();
 
 DLLEXPORT void jlapi_print_stderr();
-
 
 #endif

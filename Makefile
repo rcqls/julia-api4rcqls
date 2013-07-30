@@ -5,6 +5,23 @@ override JULIA_COMMIT = $(shell cd $(JULIAHOME);git rev-parse --short=10 HEAD)
 override CFLAGS += $(JCFLAGS)
 override CXXFLAGS += $(JCXXFLAGS)
 
+#override Make.inc
+ifeq ($(OS), Linux)
+override OSLIBS = -ldl -lrt -lpthread -Wl,--export-dynamic -Wl,--version-script=julia-api.expmap -Wl,--no-whole-archive $(LIBUNWIND)
+endif
+
+ifeq ($(OS), FreeBSD)
+override OSLIBS = -lkvm -lrt -Wl,--export-dynamic -Wl,--version-script=julia-api.expmap $(NO_WHOLE_ARCHIVE) $(LIBUNWIND)
+endif
+ 
+
+ifeq ($(OS), WINNT)
+override OSLIBS = -Wl,--export-all-symbols -Wl,--version-script= julia-api.expmap $(NO_WHOLE_ARCHIVE) -lpsapi -lkernel32 -lws2_32 -liphlpapi -lwinmm
+ifeq ($(ARCH),x86_64)
+override OSLIBS += -ldbghelp
+endif
+endif
+
 SRCS = \
 	jltypes gf ast builtins module codegen interpreter \
 	alloc dlload sys init task array dump toplevel jl_uv profile
@@ -37,7 +54,7 @@ ifeq ($(USE_COPY_STACKS),1)
 JCFLAGS += -DCOPY_STACKS
 endif
 
-default: api
+default: api htableh.inc
 
 api : %: libjulia-%
 
@@ -62,12 +79,16 @@ libjulia-api: libjulia-api.$(SHLIB_EXT)
 	cp libjulia-api.$(SHLIB_EXT) $(JULIAHOME)/julia-$(JULIA_COMMIT)/$(JL_PRIVATE_LIBDIR)
 	cp julia-api.h $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia
 
+htableh.inc:
+	cp $(JULIAHOME)/src/support/htableh.inc $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia
+
 clean:
 	-rm -f libjulia*
 	-rm -f *.do *.o *~ *# *.$(SHLIB_EXT) *.a 
 	-rm $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia/julia-api.h
 	-rm $(JULIAHOME)/julia-$(JULIA_COMMIT)/$(JL_PRIVATE_LIBDIR)/libjulia-api.$(SHLIB_EXT)
-
+	-rm $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia/htableh.inc
+	
 clean-flisp:
 	-$(MAKE) -C flisp clean
 

@@ -19,13 +19,14 @@ char * __cdecl basename(char *);
 #include "julia-api.h"
 
 /************* Tools ********************/
-//-| jl4rb_init is an small adaptation of jl_init provided in jlapi.c
+//-| jlapi_init is a small adaptation of jl_init provided in jlapi.c
 //-| Main change: 
 //-| -> use of DL_LOAD_PATH (slight modification of init_load_path in client.jl)
 //-| -> redirection of STDIN, STDOUT, STDERR
-//-|    Have to solve a strange behavior: Base.reinit_stdio fail to reload STDIN, STDOUT,STDERR (=> print failed)
+//-|    Have to solve a strange behavior: Base.reinit_stdio fail to reload STDIN, STDOUT,STDERR 
+//-|    with as a direct consequence all printing failed.
 
-DLLEXPORT void jlapi_init(char *julia_home_dir) {
+DLLEXPORT void jlapi_init(char *julia_home_dir, char* mode) {
   libsupport_init();
   char *image_file = jl_locate_sysimg(julia_home_dir);
   printf("image-file=%s\n",image_file);
@@ -43,15 +44,22 @@ DLLEXPORT void jlapi_init(char *julia_home_dir) {
   //-| Only LOAD_PATH would be initialized (needs libpcre because of abspath)!
   jl_eval_string("Base.init_load_path()");
   jl_eval_string("Base.reinit_stdio()");
-  //-| STDIN, STDOUT and STDERR not properly loaded
-  //-| I prefer redirection of STDOUT and STDERR in IOBuffer (maybe STDIN ???)
-  jl_set_global(jl_base_module,jl_symbol("STDIN"),jl_eval_string("Base.init_stdio(ccall(:jl_stdin_stream ,Ptr{Void},()),0)"));
-  jl_set_global(jl_base_module,jl_symbol("STDOUT"),jl_eval_string("IOBuffer()"));
-  jl_set_global(jl_base_module,jl_symbol("STDERR"),jl_eval_string("IOBuffer()"));
-  //-| 2 next lines fails even it is if no more necessary
-  //-| Update 27/07/13: no more crash but stuck when print.
-  // jl_set_global(jl_base_module,jl_symbol("STDOUT"),jl_eval_string("Base.init_stdio(ccall(:jl_stdout_stream,Ptr{Void},()),1)"));
-  // jl_set_global(jl_base_module,jl_symbol("STDERR"),jl_eval_string("Base.init_stdio(ccall(:jl_stderr_stream,Ptr{Void},()),2)"));
+  if(strcmp(mode,"default")!=0) {
+    printf("mode init=%s\n",mode);
+    //-| STDIN, STDOUT and STDERR not properly loaded
+    //-| I prefer redirection of STDOUT and STDERR in IOBuffer (maybe STDIN ???)
+    jl_set_global(jl_base_module,jl_symbol("STDIN"),jl_eval_string("Base.init_stdio(ccall(:jl_stdin_stream ,Ptr{Void},()),0)"));
+    if(strcmp(mode,"capture")==0) {
+      jl_set_global(jl_base_module,jl_symbol("STDOUT"),jl_eval_string("IOBuffer()"));
+      jl_set_global(jl_base_module,jl_symbol("STDERR"),jl_eval_string("IOBuffer()"));
+    }
+    //-| 2 next lines fails even it is if no more necessary
+    //-| Update 27/07/13: no more crash but stuck when print.
+    if(strcmp(mode,"tty")==0) {
+      jl_set_global(jl_base_module,jl_symbol("STDOUT"),jl_eval_string("Base.init_stdio(ccall(:jl_stdout_stream,Ptr{Void},()),1)"));
+      jl_set_global(jl_base_module,jl_symbol("STDERR"),jl_eval_string("Base.init_stdio(ccall(:jl_stderr_stream,Ptr{Void},()),2)"));
+    }
+  }
   jl_eval_string("Base.fdwatcher_reinit()");
   jl_eval_string("Base.Random.librandom_init()");
   jl_eval_string("Base.check_blas()");
