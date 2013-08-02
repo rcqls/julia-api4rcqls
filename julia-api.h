@@ -1,6 +1,7 @@
 #ifndef JULIA_API_H
 #define JULIA_API_H
 extern char *julia_home;
+static const char *jlapi_mode; 
 
 //No header jlapi.h in julia => added here locally 
 DLLEXPORT char *jl_locate_sysimg(char *jlhome);

@@ -54,7 +54,7 @@ ifeq ($(USE_COPY_STACKS),1)
 JCFLAGS += -DCOPY_STACKS
 endif
 
-default: api htableh.inc
+default: api htableh.inc libunwind
 
 api : %: libjulia-%
 
@@ -81,6 +81,16 @@ libjulia-api: libjulia-api.$(SHLIB_EXT)
 
 htableh.inc:
 	cp $(JULIAHOME)/src/support/htableh.inc $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia
+
+libunwind:
+ifeq ($(OS), Linux)
+	cp  $(JULIAHOME)/usr/include/libunwind* $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia
+endif
+
+jlapi:
+	-ln -s $(JULIAHOME)/julia-$(JULIA_COMMIT) $(HOME)/.jlapi/julia-$(JULIA_COMMIT)
+	-rm  $(HOME)/.jlapi/julia
+	-ln -s $(HOME)/.jlapi/julia-$(JULIA_COMMIT) $(HOME)/.jlapi/julia
 
 clean:
 	-rm -f libjulia*

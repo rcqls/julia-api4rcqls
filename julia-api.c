@@ -26,48 +26,55 @@ char * __cdecl basename(char *);
 //-|    Have to solve a strange behavior: Base.reinit_stdio fail to reload STDIN, STDOUT,STDERR 
 //-|    with as a direct consequence all printing failed.
 
+//-|  mode=="rcqls" is for rcqls development, mode="tty" is for initialization of STDOUT, STDERR with C API)
+//-|  other value of mode mean standard jlapi.c
 DLLEXPORT void jlapi_init(char *julia_home_dir, char* mode) {
   libsupport_init();
   char *image_file = jl_locate_sysimg(julia_home_dir);
   printf("image-file=%s\n",image_file);
   julia_init(image_file);
+  jlapi_mode=mode;
 
   jl_set_const(jl_core_module, jl_symbol("JULIA_HOME"),
                jl_cstr_to_string(julia_home));
-  jl_module_export(jl_core_module, jl_symbol("JULIA_HOME"));
-  
- 
-  //-| Called first to fix the DL_LOAD_PATH needed to (dl)open library (libpcre for example)
-  //-| Replacement of Base.init_load_path()
-  jl_set_global(jl_base_module,jl_symbol("DL_LOAD_PATH"),jl_eval_string("ByteString[join([JULIA_HOME,\"..\",\"lib\",\"julia\"],Base.path_separator)]"));
-  //-| DL_LOAD_PATH is a global constant already defined before and then not overloaded by julia
-  //-| Only LOAD_PATH would be initialized (needs libpcre because of abspath)!
-  jl_eval_string("Base.init_load_path()");
-  jl_eval_string("Base.reinit_stdio()");
-  if(strcmp(mode,"default")!=0) {
-    printf("mode init=%s\n",mode);
+  if(strcmp(mode,"rcqls")==0) {
+    jl_module_export(jl_core_module, jl_symbol("JULIA_HOME"));
+    //-| Called first to fix the DL_LOAD_PATH needed to (dl)open library (libpcre for example)
+    //-| Replacement of Base.init_load_path()
+    //-| Update 01/08/2013: No need to set DL_LOAD_PATH, just push 
+    //-| jl_set_global(jl_base_module,jl_symbol("DL_LOAD_PATH"),jl_eval_string("ByteString[join([JULIA_HOME,\"..\",\"lib\",\"julia\"],Base.path_separator)]"));
+    jl_eval_string("Base.push!(DL_LOAD_PATH,join([JULIA_HOME,\"..\",\"lib\",\"julia\"],Base.path_separator))");
+    //-| DL_LOAD_PATH is a global constant already defined before and then not overloaded by julia
+    //-| Only LOAD_PATH would be initialized (needs libpcre because of abspath)!
+    jl_eval_string("vers = \"v$(VERSION.major).$(VERSION.minor)\"");
+    jl_set_global(jl_base_module,jl_symbol("LOAD_PATH"),jl_eval_string("ByteString[abspath(JULIA_HOME,\"..\",\"local\",\"share\",\"julia\",\"site\",vers),abspath(JULIA_HOME,\"..\",\"share\",\"julia\",\"site\",vers)]")); 
+  } else jl_eval_string("Base.init_load_path()");
+  if(strcmp(mode,"rcqls")==0) {
+    jl_eval_string("Base.reinit_stdio()");
     //-| STDIN, STDOUT and STDERR not properly loaded
     //-| I prefer redirection of STDOUT and STDERR in IOBuffer (maybe STDIN ???)
-    jl_set_global(jl_base_module,jl_symbol("STDIN"),jl_eval_string("Base.init_stdio(ccall(:jl_stdin_stream ,Ptr{Void},()),0)"));
-    if(strcmp(mode,"capture")==0) {
+      jl_set_global(jl_base_module,jl_symbol("STDIN"),jl_eval_string("Base.init_stdio(ccall(:jl_stdin_stream ,Ptr{Void},()),0)"));
       jl_set_global(jl_base_module,jl_symbol("STDOUT"),jl_eval_string("IOBuffer()"));
       jl_set_global(jl_base_module,jl_symbol("STDERR"),jl_eval_string("IOBuffer()"));
-    }
+  } else if(strcmp(mode,"tty")==0) {
+    jl_eval_string("Base.reinit_stdio()");
+    jl_set_global(jl_base_module,jl_symbol("STDIN"),jl_eval_string("Base.init_stdio(ccall(:jl_stdin_stream ,Ptr{Void},()),0)"));
     //-| 2 next lines fails even it is if no more necessary
     //-| Update 27/07/13: no more crash but stuck when print.
-    if(strcmp(mode,"tty")==0) {
-      jl_set_global(jl_base_module,jl_symbol("STDOUT"),jl_eval_string("Base.init_stdio(ccall(:jl_stdout_stream,Ptr{Void},()),1)"));
-      jl_set_global(jl_base_module,jl_symbol("STDERR"),jl_eval_string("Base.init_stdio(ccall(:jl_stderr_stream,Ptr{Void},()),2)"));
-    }
-  }
+    jl_set_global(jl_base_module,jl_symbol("STDOUT"),jl_eval_string("Base.init_stdio(ccall(:jl_stdout_stream,Ptr{Void},()),1)"));
+    jl_set_global(jl_base_module,jl_symbol("STDERR"),jl_eval_string("Base.init_stdio(ccall(:jl_stderr_stream,Ptr{Void},()),2)"));
+  } else jl_eval_string("Base.reinit_stdio()");
   jl_eval_string("Base.fdwatcher_reinit()");
   jl_eval_string("Base.Random.librandom_init()");
   jl_eval_string("Base.check_blas()");
   jl_eval_string("LinAlg.init()");
   jl_eval_string("Sys.init()");
   jl_eval_string("Base.init_sched()");
-  jl_eval_string("Base.init_head_sched()"); 
-  jl_eval_string("println(\"Julia initialized!\")");
+  jl_eval_string("Base.init_head_sched()");
+  if(strcmp(mode,"rcqls")==0) { 
+    jl_eval_string("println(\"Julia initialized!\")");
+    jlapi_print_stdout();
+  }
 }
 
 //-| Get STDOUT, STDERR IOBuffer as string
@@ -75,15 +82,19 @@ DLLEXPORT void jlapi_init(char *julia_home_dir, char* mode) {
 DLLEXPORT  const char *jlapi_get_stdout() {
   jl_value_t *out;
   
-  out=jl_eval_string("seek(STDOUT, 0);jl4rb_out = takebuf_string(STDOUT);truncate(STDOUT, 0);jl4rb_out");
-  return jl_bytestring_ptr(out);
+  if(strcmp(jlapi_mode,"rcqls")==0) {
+    out=jl_eval_string("seek(STDOUT, 0);jl4rb_out = takebuf_string(STDOUT);truncate(STDOUT, 0);jl4rb_out");
+    return jl_bytestring_ptr(out);
+  } else return "";
 }
 
 DLLEXPORT  const char *jlapi_get_stderr() {
   jl_value_t *out;
   
-  out=jl_eval_string("seek(STDERR, 0);jl4rb_out = takebuf_string(STDERR);truncate(STDERR, 0);jl4rb_out");
-  return jl_bytestring_ptr(out);
+  if(strcmp(jlapi_mode,"rcqls")==0) {
+    out=jl_eval_string("seek(STDERR, 0);jl4rb_out = takebuf_string(STDERR);truncate(STDERR, 0);jl4rb_out");
+    return jl_bytestring_ptr(out);
+  } else return ""; 
 }
 
 //-| Print STDOUT, STDERR IOBuffer
