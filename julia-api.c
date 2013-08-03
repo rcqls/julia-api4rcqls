@@ -37,7 +37,7 @@ DLLEXPORT void jlapi_init(char *julia_home_dir, char* mode) {
 
   jl_set_const(jl_core_module, jl_symbol("JULIA_HOME"),
                jl_cstr_to_string(julia_home));
-  if(strcmp(mode,"rcqls")==0) {
+  if(strcmp(mode,"rcqls")<=0) { // cqls, rcqls
     jl_module_export(jl_core_module, jl_symbol("JULIA_HOME"));
     //-| Called first to fix the DL_LOAD_PATH needed to (dl)open library (libpcre for example)
     //-| Replacement of Base.init_load_path()
@@ -49,20 +49,20 @@ DLLEXPORT void jlapi_init(char *julia_home_dir, char* mode) {
     jl_eval_string("vers = \"v$(VERSION.major).$(VERSION.minor)\"");
     jl_set_global(jl_base_module,jl_symbol("LOAD_PATH"),jl_eval_string("ByteString[abspath(JULIA_HOME,\"..\",\"local\",\"share\",\"julia\",\"site\",vers),abspath(JULIA_HOME,\"..\",\"share\",\"julia\",\"site\",vers)]")); 
   } else jl_eval_string("Base.init_load_path()");
-  if(strcmp(mode,"rcqls")==0) {
-    jl_eval_string("Base.reinit_stdio()");
-    //-| STDIN, STDOUT and STDERR not properly loaded
-    //-| I prefer redirection of STDOUT and STDERR in IOBuffer (maybe STDIN ???)
-      jl_set_global(jl_base_module,jl_symbol("STDIN"),jl_eval_string("Base.init_stdio(ccall(:jl_stdin_stream ,Ptr{Void},()),0)"));
-      jl_set_global(jl_base_module,jl_symbol("STDOUT"),jl_eval_string("IOBuffer()"));
-      jl_set_global(jl_base_module,jl_symbol("STDERR"),jl_eval_string("IOBuffer()"));
-  } else if(strcmp(mode,"tty")==0) {
+  if(strcmp(mode,"tty")==0) {
     jl_eval_string("Base.reinit_stdio()");
     jl_set_global(jl_base_module,jl_symbol("STDIN"),jl_eval_string("Base.init_stdio(ccall(:jl_stdin_stream ,Ptr{Void},()),0)"));
     //-| 2 next lines fails even it is if no more necessary
     //-| Update 27/07/13: no more crash but stuck when print.
     jl_set_global(jl_base_module,jl_symbol("STDOUT"),jl_eval_string("Base.init_stdio(ccall(:jl_stdout_stream,Ptr{Void},()),1)"));
     jl_set_global(jl_base_module,jl_symbol("STDERR"),jl_eval_string("Base.init_stdio(ccall(:jl_stderr_stream,Ptr{Void},()),2)"));
+  } else if(strcmp(mode,"rcqls")<=0) { //cqls, rcqls
+    jl_eval_string("Base.reinit_stdio()");
+    //-| STDIN, STDOUT and STDERR not properly loaded
+    //-| I prefer redirection of STDOUT and STDERR in IOBuffer (maybe STDIN ???)
+      jl_set_global(jl_base_module,jl_symbol("STDIN"),jl_eval_string("Base.init_stdio(ccall(:jl_stdin_stream ,Ptr{Void},()),0)"));
+      jl_set_global(jl_base_module,jl_symbol("STDOUT"),jl_eval_string("IOBuffer()"));
+      jl_set_global(jl_base_module,jl_symbol("STDERR"),jl_eval_string("IOBuffer()"));
   } else jl_eval_string("Base.reinit_stdio()");
   jl_eval_string("Base.fdwatcher_reinit()");
   jl_eval_string("Base.Random.librandom_init()");
