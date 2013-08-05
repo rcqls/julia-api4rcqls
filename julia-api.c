@@ -37,6 +37,7 @@ DLLEXPORT void jlapi_init(char *julia_home_dir, char* mode) {
 
   jl_set_const(jl_core_module, jl_symbol("JULIA_HOME"),
                jl_cstr_to_string(julia_home));
+  load_library_permanently("/Users/remy/.jlapi/julia/lib/julia/libjulia-api.dylib");
   if(strcmp(mode,"rcqls")<=0) { // cqls, rcqls
     jl_module_export(jl_core_module, jl_symbol("JULIA_HOME"));
     //-| Called first to fix the DL_LOAD_PATH needed to (dl)open library (libpcre for example)

@@ -1,5 +1,7 @@
 #ifndef JULIA_API_H
 #define JULIA_API_H
+#include "julia.h"
+
 extern char *julia_home;
 static const char *jlapi_mode; 
 
@@ -17,6 +19,7 @@ DLLEXPORT size_t jl_array_size(jl_value_t *a, int d);
 DLLEXPORT jl_value_t *jl_get_field(jl_value_t *o, char *fld);
 DLLEXPORT jl_value_t *jl_exception_occurred(void);
 DLLEXPORT void jl_exception_clear(void);
+int load_library_permanently(const char *libname);
 
 /************* Tools ********************/
 

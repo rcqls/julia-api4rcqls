@@ -69,8 +69,8 @@ HEADERS = $(JULIAHOME)/src/julia.h julia-api.h $(wildcard support/*.h) $(LIBUV_I
 %.do: %.cpp $(HEADERS)
 	$(QUIET_CC) $(CXX) $(call exec,$(LLVM_CONFIG) --cxxflags) $(CPPFLAGS) $(CXXFLAGS) $(DEBUGFLAGS) -c $< -o $@
 
-libjulia-api.$(SHLIB_EXT): julia-api.o
-	$(QUIET_LINK) $(CXX) $(SHIPFLAGS) $(OBJS) $(RPATH_ORIGIN) -shared -o $@ $(LDFLAGS) $(LIBS) $(SONAME)
+libjulia-api.$(SHLIB_EXT): permanentLibrary.o julia-api.o
+	$(QUIET_LINK) $(CXX) $(SHIPFLAGS) $(OBJS) permanentLibrary.o $(RPATH_ORIGIN) -shared -o $@ $(LDFLAGS) $(LIBS) $(SONAME)
 	$(INSTALL_NAME_CMD)libjulia-api.$(SHLIB_EXT) $@
 libjulia-api.a: julia.expmap $(OBJS) flisp/libflisp.a support/libsupport.a
 	rm -f $@
