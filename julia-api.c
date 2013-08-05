@@ -37,9 +37,25 @@ DLLEXPORT void jlapi_init(char *julia_home_dir, char* mode) {
 
   jl_set_const(jl_core_module, jl_symbol("JULIA_HOME"),
                jl_cstr_to_string(julia_home));
-  load_library_permanently("/Users/remy/.jlapi/julia/lib/julia/libjulia-api.dylib");
+  jl_module_export(jl_core_module, jl_symbol("JULIA_HOME"));
+  //-| This avoid LD_PRELOAD on linux since shared objects not exported
+  //-| Maybe fix this in a better way with options compilation.
+  char julia_api_libname[512];
+#if defined(_OS_WINDOWS_)
+  const char *shlib_ext=".dll";
+  const char *sep="\\";
+#elif defined(__APPLE__)
+  const char *shlib_ext=".dylib";
+  const char *sep="/";
+#else
+  const char *shlib_ext=".so";
+  const char *sep="/";
+#endif
+
+  snprintf(julia_api_libname, sizeof(julia_api_libname), "%s%s%s%s%s%s",
+          julia_home_dir, sep,"julia",sep,"libjulia-api",shlib_ext);
+  load_library_permanently(julia_api_libname);
   if(strcmp(mode,"rcqls")<=0) { // cqls, rcqls
-    jl_module_export(jl_core_module, jl_symbol("JULIA_HOME"));
     //-| Called first to fix the DL_LOAD_PATH needed to (dl)open library (libpcre for example)
     //-| Replacement of Base.init_load_path()
     //-| Update 01/08/2013: No need to set DL_LOAD_PATH, just push 
