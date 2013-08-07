@@ -33,6 +33,7 @@ FLAGS = \
 	-I$(call exec,$(LLVM_CONFIG) --includedir) \
 	-I$(LIBUV_INC) -I$(JULIAHOME)/usr/include -I$(JULIAHOME)/src
 
+
 LIBS = $(WHOLE_ARCHIVE) $(JULIAHOME)/src/flisp/libflisp.a $(WHOLE_ARCHIVE) $(JULIAHOME)/src/support/libsupport.a -L$(BUILD)/lib $(LIBUV) $(NO_WHOLE_ARCHIVE) $(call exec,$(LLVM_CONFIG) --libs) $(call exec,$(LLVM_CONFIG) --ldflags) $(OSLIBS)
 
 ifneq ($(MAKECMDGOALS),debug)
@@ -54,27 +55,27 @@ ifeq ($(USE_COPY_STACKS),1)
 JCFLAGS += -DCOPY_STACKS
 endif
 
-default: api htableh.inc libunwind
+default: api  # htableh.inc libunwind
 
 api : %: libjulia-%
 
 HEADERS = $(JULIAHOME)/src/julia.h julia-api.h $(wildcard support/*.h) $(LIBUV_INC)/uv.h
 
 %.o: %.c $(HEADERS)
-	$(QUIET_CC) $(CC) $(CPPFLAGS) $(CFLAGS) $(SHIPFLAGS) -DNDEBUG -c $< -o $@
+	@$(PRINT_CC) $(CC) $(CPPFLAGS) $(CFLAGS) $(SHIPFLAGS) -DNDEBUG -c $< -o $@
 %.do: %.c $(HEADERS)
-	$(QUIET_CC) $(CC) $(CPPFLAGS) $(CFLAGS) $(DEBUGFLAGS) -c $< -o $@
+	@$(PRINT_CC) $(CC) $(CPPFLAGS) $(CFLAGS) $(DEBUGFLAGS) -c $< -o $@
 %.o: %.cpp $(HEADERS)
-	$(QUIET_CC) $(CXX) $(call exec,$(LLVM_CONFIG) --cxxflags) $(CPPFLAGS) $(CXXFLAGS) $(SHIPFLAGS) -c $< -o $@
+	@$(PRINT_CC) $(CXX) $(call exec,$(LLVM_CONFIG) --cxxflags) $(CPPFLAGS) $(CXXFLAGS) $(SHIPFLAGS) -c $< -o $@
 %.do: %.cpp $(HEADERS)
-	$(QUIET_CC) $(CXX) $(call exec,$(LLVM_CONFIG) --cxxflags) $(CPPFLAGS) $(CXXFLAGS) $(DEBUGFLAGS) -c $< -o $@
+	@$(PRINT_CC) $(CXX) $(call exec,$(LLVM_CONFIG) --cxxflags) $(CPPFLAGS) $(CXXFLAGS) $(DEBUGFLAGS) -c $< -o $@
 
 libjulia-api.$(SHLIB_EXT): cppAddOn.o julia-api.o
-	$(QUIET_LINK) $(CXX) $(SHIPFLAGS) $(OBJS) cppAddOn.o $(RPATH_ORIGIN) -shared -o $@ $(LDFLAGS) $(LIBS) $(SONAME)
+	@$(PRINT_LINK) $(CXX) $(SHIPFLAGS) $(OBJS) cppAddOn.o $(RPATH_ORIGIN) -shared -o $@ $(LDFLAGS) $(LIBS) $(SONAME)
 	$(INSTALL_NAME_CMD)libjulia-api.$(SHLIB_EXT) $@
 libjulia-api.a: julia.expmap $(OBJS) flisp/libflisp.a support/libsupport.a
 	rm -f $@
-	$(QUIET_LINK) ar -rcs $@ $(OBJS)
+	@$(PRINT_LINK) ar -rcs $@ $(OBJS)
 libjulia-api: libjulia-api.$(SHLIB_EXT)
 	cp libjulia-api.$(SHLIB_EXT) $(JULIAHOME)/julia-$(JULIA_COMMIT)/$(JL_PRIVATE_LIBDIR)
 	cp julia-api.h $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia
@@ -97,7 +98,7 @@ clean:
 	-rm -f *.do *.o *~ *# *.$(SHLIB_EXT) *.a 
 	-rm $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia/julia-api.h
 	-rm $(JULIAHOME)/julia-$(JULIA_COMMIT)/$(JL_PRIVATE_LIBDIR)/libjulia-api.$(SHLIB_EXT)
-	-rm $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia/htableh.inc
+	#-rm $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia/htableh.inc
 	
 clean-flisp:
 	-$(MAKE) -C flisp clean
