@@ -16,7 +16,7 @@ endif
  
 
 ifeq ($(OS), WINNT)
-override OSLIBS = -Wl,--export-all-symbols -Wl,--version-script= julia-api.expmap $(NO_WHOLE_ARCHIVE) -lpsapi -lkernel32 -lws2_32 -liphlpapi -lwinmm
+override OSLIBS = -Wl,--export-all-symbols -Wl,--version-script=julia-api.expmap $(NO_WHOLE_ARCHIVE) -lpsapi -lkernel32 -lws2_32 -liphlpapi -lwinmm
 ifeq ($(ARCH),x86_64)
 override OSLIBS += -ldbghelp
 endif
