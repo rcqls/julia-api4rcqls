@@ -55,7 +55,7 @@ ifeq ($(USE_COPY_STACKS),1)
 JCFLAGS += -DCOPY_STACKS
 endif
 
-default: api  # htableh.inc libunwind
+default: api
 
 api : %: libjulia-%
 
@@ -77,18 +77,19 @@ libjulia-api.a: julia.expmap $(OBJS) flisp/libflisp.a support/libsupport.a
 	rm -f $@
 	@$(PRINT_LINK) ar -rcs $@ $(OBJS)
 libjulia-api: libjulia-api.$(SHLIB_EXT)
+
+install: api
 	cp libjulia-api.$(SHLIB_EXT) $(JULIAHOME)/julia-$(JULIA_COMMIT)/$(JL_PRIVATE_LIBDIR)
 	cp julia-api.h $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia
-
-htableh.inc:
-	cp $(JULIAHOME)/src/support/htableh.inc $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia
-
-libunwind:
 ifeq ($(OS), Linux)
+	#cp $(JULIAHOME)/src/support/htableh.inc $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia
 	cp  $(JULIAHOME)/usr/include/libunwind* $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia
 endif
+ifeq ($(OS), WINNT)
+	cp $(JULIAHOME)/usr/include/tree.h $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia
+endif
 
-jlapi:
+link-jlapi:
 	-ln -s $(JULIAHOME)/julia-$(JULIA_COMMIT) $(HOME)/.jlapi/julia-$(JULIA_COMMIT)
 	-rm  $(HOME)/.jlapi/julia
 	-ln -s $(HOME)/.jlapi/julia-$(JULIA_COMMIT) $(HOME)/.jlapi/julia
@@ -98,13 +99,10 @@ clean:
 	-rm -f *.do *.o *~ *# *.$(SHLIB_EXT) *.a 
 	-rm $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia/julia-api.h
 	-rm $(JULIAHOME)/julia-$(JULIA_COMMIT)/$(JL_PRIVATE_LIBDIR)/libjulia-api.$(SHLIB_EXT)
-	#-rm $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia/htableh.inc
-	
-clean-flisp:
-	-$(MAKE) -C flisp clean
-
-clean-support:
-	-$(MAKE) -C support clean
-
-cleanall: clean clean-flisp clean-support
-
+ifeq ($(OS), Linux)
+	-rm $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia/htableh.inc
+	-rm $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia/libunwind*
+endif
+ifeq ($(OS), WINNT)
+	-rm $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia/tree.h
+endif
