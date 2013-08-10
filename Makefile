@@ -89,6 +89,15 @@ ifeq ($(OS), WINNT)
 	cp $(JULIAHOME)/usr/include/tree.h $(JULIAHOME)/julia-$(JULIA_COMMIT)/include/julia
 endif
 
+win-dist:
+	mkdir -p dist/$(JL_PRIVATE_LIBDIR)
+	mkdir -p dist/include/julia
+	cp libjulia-api.$(SHLIB_EXT) dist/$(JL_PRIVATE_LIBDIR)
+	cp julia-api.h dist/include/julia
+	cp $(JULIAHOME)/usr/include/tree.h dist/include/julia
+	cd dist && zip -r ../julia-api-$(JULIA_COMMIT)-$(OS)-$(ARCH).zip .
+	rm -fr dist
+
 link-jlapi:
 	-ln -s $(JULIAHOME)/julia-$(JULIA_COMMIT) $(HOME)/.jlapi/julia-$(JULIA_COMMIT)
 	-rm  $(HOME)/.jlapi/julia
