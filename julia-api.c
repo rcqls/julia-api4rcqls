@@ -15,7 +15,6 @@ char * __cdecl basename(char *);
 #else
 #include <libgen.h>
 #endif
-#include "julia.h"
 #include "julia-api.h"
 
 /************* Tools ********************/
