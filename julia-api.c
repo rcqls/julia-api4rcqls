@@ -78,6 +78,7 @@ DLLEXPORT void jlapi_init(char *julia_home_dir, char* mode) {
     //-| STDIN, STDOUT and STDERR not properly loaded
     //-| I prefer redirection of STDOUT and STDERR in IOBuffer (maybe STDIN ???)
       jl_set_global(jl_base_module,jl_symbol("STDIN"),jl_eval_string("Base.init_stdio(ccall(:jl_stdin_stream ,Ptr{Void},()),0)"));
+      //jl_set_global(jl_base_module,jl_symbol("STDIN"),jl_eval_string("IOBuffer()"));
       jl_set_global(jl_base_module,jl_symbol("STDOUT"),jl_eval_string("IOBuffer()"));
       jl_set_global(jl_base_module,jl_symbol("STDERR"),jl_eval_string("IOBuffer()"));
   } else jl_eval_string("Base.reinit_stdio()");
@@ -88,6 +89,7 @@ DLLEXPORT void jlapi_init(char *julia_home_dir, char* mode) {
   jl_eval_string("Sys.init()");
   jl_eval_string("Base.init_sched()");
   jl_eval_string("Base.init_head_sched()");
+  jl_eval_string("Base.try_include(abspath(ENV[\"HOME\"],\".juliarc.jl\"))");
   if(strcmp(mode,"rcqls")==0) { 
     jl_eval_string("println(\"Julia initialized!\")");
     jlapi_print_stdout();

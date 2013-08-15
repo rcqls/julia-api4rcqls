@@ -1,12 +1,12 @@
 #ifndef JULIA_API_H
 #define JULIA_API_H
 //#include "julia.h"
+
+
+#ifndef JULIA_H
 #include "dtypes.h"
 #include "htable.h"
 #include "arraylist.h"
-
-#ifndef JULIA_H
-
 #ifdef OVERLAP_TUPLE_LEN
 #define JL_DATA_TYPE    \
     size_t type : 52;   \
