@@ -289,3 +289,12 @@ DLLEXPORT int jl_is_debugbuild(void) {
 #endif
 }
 
+// Missing 
+DLLEXPORT jl_value_t *jlapi_box_bool(int8_t x) {
+  return jl_box_bool(x);
+}
+
+DLLEXPORT jl_value_t *jlapi_box_float64(double x) {
+  return jl_box_float64(x);
+}
+

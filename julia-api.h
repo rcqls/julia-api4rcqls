@@ -32,4 +32,8 @@ DLLEXPORT void jlapi_print_stdout();
 
 DLLEXPORT void jlapi_print_stderr();
 
+DLLEXPORT jl_value_t *jlapi_box_bool(int8_t x);
+
+DLLEXPORT jl_value_t *jlapi_box_float64(double x);
+
 #endif

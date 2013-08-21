@@ -370,11 +370,7 @@
     add_library_mapping;
 
     /* julia-api */
-    jlapi_init;
-    jlapi_print_stdout;
-    jlapi_get_stdout;
-    jlapi_print_stderr;
-    jlapi_get_stderr;
+    jlapi_*;
     jl_bytestring_ptr;
     jl_unbox_bool;
     load_library_permanently;
